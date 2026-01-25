@@ -557,6 +557,10 @@ export interface EquityMasterSnapshotRecord {
 
 /**
  * equity_bar_daily テーブル用
+ *
+ * NOTE: expandSessions使用時、raw_jsonはストレージ効率のため
+ * 最初のレコード（通常DAYセッション）のみに格納。
+ * 他のセッション（AM/PM）のraw_jsonはnullとなる。
  */
 export interface EquityBarDailyRecord {
   trade_date: string;
@@ -574,7 +578,7 @@ export interface EquityBarDailyRecord {
   adj_low?: number;
   adj_close?: number;
   adj_volume?: number;
-  raw_json: EquityBarDailyItem;
+  raw_json: EquityBarDailyItem | null;
   ingested_at?: string;
 }
 
@@ -615,6 +619,10 @@ export interface EarningsCalendarRecord {
 
 /**
  * investor_type_trading テーブル用（縦持ち）
+ *
+ * NOTE: raw_jsonはストレージ効率のため最初のレコードのみに格納。
+ * 他のレコードはraw_json: nullとなる。元データが必要な場合は
+ * investor_type='Total', metric='sales'のレコードを参照すること。
  */
 export interface InvestorTypeTradingRecord {
   published_date: string;
@@ -624,7 +632,7 @@ export interface InvestorTypeTradingRecord {
   investor_type: string;
   metric: string;
   value_kjpy?: number;
-  raw_json: InvestorTypeTradingItem;
+  raw_json: InvestorTypeTradingItem | null;
   ingested_at?: string;
 }
 

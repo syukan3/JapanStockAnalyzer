@@ -72,7 +72,7 @@ export function chunkArray<T>(array: T[], size: number): T[][] {
  * );
  * ```
  */
-export async function batchUpsert<T extends Record<string, unknown>>(
+export async function batchUpsert<T extends object>(
   supabase: SupabaseClient,
   table: string,
   data: T[],

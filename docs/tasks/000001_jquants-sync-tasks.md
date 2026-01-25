@@ -107,13 +107,13 @@ J-Quants API V2（2025年12月リリース）の主な変更点:
 
 ### Phase 4: J-Quants エンドポイント
 
-- [ ] src/lib/jquants/endpoints/trading-calendar.ts
-- [ ] src/lib/jquants/endpoints/equity-master.ts
-- [ ] src/lib/jquants/endpoints/equity-bars-daily.ts
-- [ ] src/lib/jquants/endpoints/index-topix.ts
-- [ ] src/lib/jquants/endpoints/fins-summary.ts
-- [ ] src/lib/jquants/endpoints/earnings-calendar.ts
-- [ ] src/lib/jquants/endpoints/investor-types.ts
+- [x] src/lib/jquants/endpoints/trading-calendar.ts
+- [x] src/lib/jquants/endpoints/equity-master.ts
+- [x] src/lib/jquants/endpoints/equity-bars-daily.ts
+- [x] src/lib/jquants/endpoints/index-topix.ts
+- [x] src/lib/jquants/endpoints/fins-summary.ts
+- [x] src/lib/jquants/endpoints/earnings-calendar.ts
+- [x] src/lib/jquants/endpoints/investor-types.ts
 
 ### Phase 5: Cron ハンドラー
 
