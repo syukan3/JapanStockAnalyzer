@@ -4,6 +4,51 @@
 
 実装計画: [000001_jquants-sync-implementation.md](../plan/000001_jquants-sync-implementation.md)
 
+## V1→V2 変更点サマリ
+
+J-Quants API V2（2025年12月リリース）の主な変更点:
+
+### 認証方式
+
+| 項目 | V1 | V2 |
+|------|----|----|
+| 認証方式 | ID Token / Refresh Token | **APIキー（x-api-keyヘッダー）** |
+| トークン管理 | 要リフレッシュ | 有効期限なし（ダッシュボードで再発行可能） |
+
+### エンドポイント変更
+
+| データセット | V1 | V2 |
+|--------------|----|----|
+| 株価四本値 | `/v1/prices/daily_quotes` | `/v2/equities/bars/daily` |
+| 前場四本値 | `/v1/prices/prices_am` | `/v2/equities/bars/daily/am` |
+| 決算発表予定 | `/v1/fins/announcement` | `/v2/equities/earnings-calendar` |
+| 投資部門別 | `/v1/markets/trades_spec` | `/v2/equities/investor-types` |
+| 上場銘柄一覧 | `/v1/listed/info` | `/v2/equities/master` |
+| 指数四本値 | `/v1/indices` | `/v2/indices/bars/daily` |
+| 財務諸表 | `/v1/fins/fs_details` | `/v2/fins/details` |
+| 取引カレンダー | `/v1/markets/calendar` | `/v2/markets/calendar` |
+
+### レスポンス形式の変更
+
+- **データキー**: すべて `data` キーで配列として返却
+- **フィールド名短縮**: `Open`→`O`, `High`→`H`, `Volume`→`Vo`, `AdjustmentOpen`→`AdjO` 等
+
+### プラン別レート制限
+
+| プラン | リクエスト/分 |
+|--------|--------------|
+| Free | 5 |
+| Light | **60**（本システム採用） |
+| Standard | 120 |
+| Premium | 500 |
+
+### 廃止エンドポイント
+
+- `/v1/token/auth_user`（トークン発行）
+- `/v1/token/auth_refresh`（トークンリフレッシュ）
+
+> 参照: [V1→V2移行ガイド](https://jpx-jquants.com/spec/migration-v1-v2)
+
 ## タスク一覧
 
 ### Phase 1: プロジェクト初期設定

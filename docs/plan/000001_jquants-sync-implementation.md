@@ -505,7 +505,15 @@ create table if not exists jquants_core.earnings_calendar (
 - `jquants_core`, `jquants_ingest` スキーマへのアクセス
 
 #### 3.2 src/lib/jquants/rate-limiter.ts
-- Light: **60 req/min**
+
+V2プラン別レート制限:
+| プラン | リクエスト/分 |
+|--------|--------------|
+| Free | 5 |
+| Light | **60**（本システム採用） |
+| Standard | 120 |
+| Premium | 500 |
+
 - 同時実行数は原則1（ページングも直列）
 - 1リクエストごとに最低待機（**1000ms/req**）
 
@@ -948,10 +956,11 @@ APIレスポンスを「投資主体（investor_type）× 指標（metric: sales
 |------|-----------|
 | Next.js | 16.1.4 |
 | TypeScript | 5.7+ |
-| @supabase/supabase-js | 2.47+ |
-| @supabase/ssr | 0.5+ |
-| zod | 3.24+ |
-| vitest | 3.0+ |
+| @supabase/supabase-js | 2.91+ |
+| @supabase/ssr | 0.8+ |
+| zod | 4.3+ |
+| vitest | 4.0+ |
+| resend | 6.8+ |
 
 ---
 

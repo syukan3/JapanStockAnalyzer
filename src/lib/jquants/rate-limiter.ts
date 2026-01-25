@@ -1,8 +1,16 @@
 /**
- * J-Quants API レート制限
+ * J-Quants API V2 レート制限
  *
- * @description Light プラン: 60 req/min (1 req/秒)
- * トークンバケットアルゴリズムで制御
+ * @description トークンバケットアルゴリズムで制御
+ * @see https://jpx-jquants.com/spec/migration-v1-v2
+ *
+ * V2プラン別レート制限:
+ * | プラン    | リクエスト/分 |
+ * |-----------|--------------|
+ * | Free      | 5            |
+ * | Light     | 60（本システム採用）|
+ * | Standard  | 120          |
+ * | Premium   | 500          |
  */
 
 export interface RateLimiterOptions {
