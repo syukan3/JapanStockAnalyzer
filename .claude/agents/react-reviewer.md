@@ -2,7 +2,7 @@
 name: react-reviewer
 description: React/Next.jsコードのパフォーマンスとベストプラクティスをレビューする。コンポーネント作成後、バンドルサイズ問題、再レンダリング問題の調査時に使用。「Reactコードをレビュー」「Next.jsを最適化」で呼び出す。
 tools: Read, Glob, Grep
-model: haiku
+model: opus
 skills:
   - react-best-practices
 ---

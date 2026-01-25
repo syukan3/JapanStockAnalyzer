@@ -2,7 +2,7 @@
 name: best-practices-reviewer
 description: VercelとSupabaseのベストプラクティスに準拠しているかコードをレビューする。コード変更後、PR作成前、パフォーマンス問題の調査時に積極的に使用する。「ベストプラクティスをチェック」「コードレビュー」「パフォーマンスレビュー」で呼び出す。
 tools: Read, Glob, Grep, Bash
-model: sonnet
+model: opus
 skills:
   - react-best-practices
   - postgres-best-practices

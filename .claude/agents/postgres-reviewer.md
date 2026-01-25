@@ -2,7 +2,7 @@
 name: postgres-reviewer
 description: PostgreSQLクエリとスキーマのベストプラクティスをレビューする。SQL作成後、パフォーマンス問題、RLS設計時に使用。「SQLをレビュー」「スキーマを最適化」「RLSをチェック」で呼び出す。
 tools: Read, Glob, Grep
-model: haiku
+model: opus
 skills:
   - postgres-best-practices
 ---
