@@ -117,20 +117,21 @@ J-Quants API V2（2025年12月リリース）の主な変更点:
 
 ### Phase 5: Cron ハンドラー
 
-- [ ] src/lib/cron/handlers/cron-a.ts - 日次確定データ
+- [x] src/lib/cron/handlers/cron-a.ts - 日次確定データ
   - 前営業日の株価、財務、TOPIX、銘柄マスタ、カレンダー
   - キャッチアップロジック (最大5営業日)
-- [ ] src/lib/cron/handlers/cron-b.ts - 決算発表予定
+- [x] src/lib/cron/handlers/cron-b.ts - 決算発表予定
   - 翌営業日の決算発表予定
-- [ ] src/lib/cron/handlers/cron-c.ts - 投資部門別
+- [x] src/lib/cron/handlers/cron-c.ts - 投資部門別
   - スライディングウィンドウ60日
   - 整合性チェック
+- [x] src/lib/cron/handlers/index.ts - re-exports
 
 ### Phase 6: Route Handler
 
-- [ ] src/app/api/cron/jquants/a/route.ts
-- [ ] src/app/api/cron/jquants/b/route.ts
-- [ ] src/app/api/cron/jquants/c/route.ts
+- [x] src/app/api/cron/jquants/a/route.ts
+- [x] src/app/api/cron/jquants/b/route.ts
+- [x] src/app/api/cron/jquants/c/route.ts
 
 ### Phase 7: 運用ドキュメント
 
