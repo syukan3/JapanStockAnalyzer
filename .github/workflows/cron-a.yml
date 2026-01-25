@@ -1,0 +1,66 @@
+# Cron A - Daily Data Sync
+# JST 09:20 (UTC 00:20) - 前営業日の確定データ取り込み
+# 対象: カレンダー、株価、TOPIX、財務、銘柄マスタ
+
+name: Cron A - Daily Data Sync
+
+on:
+  schedule:
+    - cron: '20 0 * * *'  # JST 09:20
+  workflow_dispatch:       # 手動実行
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+
+    steps:
+      - name: Trigger Cron A - Calendar
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"dataset": "calendar"}' \
+            --fail --silent --show-error --max-time 30
+
+      - name: Trigger Cron A - Equity Bars
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"dataset": "equity_bars"}' \
+            --fail --silent --show-error --max-time 30
+
+      - name: Trigger Cron A - TOPIX
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"dataset": "topix"}' \
+            --fail --silent --show-error --max-time 30
+
+      - name: Trigger Cron A - Financial
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"dataset": "financial"}' \
+            --fail --silent --show-error --max-time 30
+
+      - name: Trigger Cron A - Equity Master
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"dataset": "equity_master"}' \
+            --fail --silent --show-error --max-time 30
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/notify/failure" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"job": "cron_a", "workflow_run_id": "${{ github.run_id }}"}' \
+            --silent --show-error --max-time 30 || true

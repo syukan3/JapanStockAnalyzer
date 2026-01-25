@@ -1,0 +1,42 @@
+# Cron C - Investor Types Sync
+# JST 12:10 (UTC 03:10) - 投資部門別（週次）の取り込み + 整合性チェック
+# スライディングウィンドウ方式で過去60日分を取得
+
+name: Cron C - Investor Types Sync
+
+on:
+  schedule:
+    - cron: '10 3 * * *'  # JST 12:10
+  workflow_dispatch:       # 手動実行
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+
+    steps:
+      - name: Trigger Cron C - Investor Types
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/c" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"dataset": "investor_types"}' \
+            --fail --silent --show-error --max-time 30
+
+      - name: Trigger Cron C - Integrity Check
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/c" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"dataset": "integrity_check"}' \
+            --fail --silent --show-error --max-time 30
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/notify/failure" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"job": "cron_c", "workflow_run_id": "${{ github.run_id }}"}' \
+            --silent --show-error --max-time 30 || true

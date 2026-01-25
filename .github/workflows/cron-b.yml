@@ -1,0 +1,34 @@
+# Cron B - Earnings Calendar Sync
+# JST 19:20 (UTC 10:20) - 翌営業日の決算発表予定取り込み
+# 土日祝も起動（APIは「次の営業日」を返すため）
+
+name: Cron B - Earnings Calendar Sync
+
+on:
+  schedule:
+    - cron: '20 10 * * *'  # JST 19:20
+  workflow_dispatch:        # 手動実行
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+
+    steps:
+      - name: Trigger Cron B - Earnings Calendar
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/b" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"dataset": "earnings_calendar"}' \
+            --fail --silent --show-error --max-time 30
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.VERCEL_URL }}/api/notify/failure" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"job": "cron_b", "workflow_run_id": "${{ github.run_id }}"}' \
+            --silent --show-error --max-time 30 || true

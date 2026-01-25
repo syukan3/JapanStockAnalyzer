@@ -12,12 +12,12 @@
 - [x] tsconfig.json 作成
 - [x] next.config.ts 作成
 - [x] .env.local.example 作成
-- [ ] src/app/layout.tsx 作成
-- [ ] src/app/page.tsx 作成
-- [ ] .github/workflows/cron-a.yml - 日次確定データスケジューラ（JST 09:20）
-- [ ] .github/workflows/cron-b.yml - 決算発表予定スケジューラ（JST 19:20）
-- [ ] .github/workflows/cron-c.yml - 投資部門別スケジューラ（JST 12:10）
-- [ ] .github/workflows/backup.yml - 週次バックアップ
+- [x] src/app/layout.tsx 作成
+- [x] src/app/page.tsx 作成
+- [x] .github/workflows/cron-a.yml - 日次確定データスケジューラ（JST 09:20）
+- [x] .github/workflows/cron-b.yml - 決算発表予定スケジューラ（JST 19:20）
+- [x] .github/workflows/cron-c.yml - 投資部門別スケジューラ（JST 12:10）
+- [x] .github/workflows/backup.yml - 週次バックアップ
 
 ### Phase 2: Supabase マイグレーション
 
@@ -103,10 +103,10 @@ Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7
 
 | 技術 | バージョン |
 |------|-----------|
-| Next.js | 15.1.4 |
+| Next.js | 16.1.4 |
 | TypeScript | 5.7+ |
-| @supabase/supabase-js | 2.47+ |
-| @supabase/ssr | 0.5+ |
-| zod | 3.24+ |
-| vitest | 3.0+ |
-| resend | latest |
+| @supabase/supabase-js | 2.91+ |
+| @supabase/ssr | 0.8+ |
+| zod | 4.3+ |
+| vitest | 4.0+ |
+| resend | 6.8+ |
