@@ -84,7 +84,11 @@ JapanStockAnalyzer/
 │       └── troubleshooting.md      # 障害時追跡方法
 ├── package.json
 ├── next.config.ts
-└── .env.local.example
+├── .env.local.example
+├── instrumentation.ts          # Sentry instrumentation hook
+├── instrumentation-client.ts   # Sentry クライアント初期化
+├── sentry.server.config.ts     # Sentry サーバー初期化
+└── sentry.edge.config.ts       # Sentry Edge Runtime 初期化
 ```
 
 ---
@@ -1673,54 +1677,201 @@ from jquants_core.trading_calendar;
 
 ---
 
-## Sentry（任意）
+## Sentry 導入
 
 ### 無料プランで利用可能
 
 | 項目 | 制限 | 本システムでの消費 |
 |------|------|------------------|
-| Errors | 5,000/月 | Cron失敗時のみ（通常0） |
-| Transactions | 10,000/月 | 全リクエストで約90/月 |
+| Errors | 5,000/月 | Cron失敗時のみ（通常0〜100） |
+| Transactions | 10,000/月 | サーバー10% + クライアント1%で約1,200/月 |
+| Replays | - | 無効化（0） |
 | ユーザー | 1人 | 問題なし |
 
-**無料で十分**: バックエンド Cron のみのため、制限に達することはほぼない。
+**無料で十分**: サンプリング設定により制限内に収まる。
 
-### 結論：**初期は不要、必要に応じて追加**
+### 導入手順
 
-**不要な理由**：
-1. Vercel のログ機能で基本的な監視は可能
-2. Supabase の heartbeat テーブルで死活監視可能
-3. Resend でメール通知を実装済み
-
-**導入を検討すべきタイミング**：
-- ユーザー向けフロントエンドを追加
-- チーム開発に移行
-- 複雑なエラー調査が頻発
-
-### 導入手順（参考）
+#### Step 1: パッケージインストール
 
 ```bash
 npm install @sentry/nextjs
-npx @sentry/wizard@latest -i nextjs
 ```
 
+#### Step 2: Sentry設定ファイル作成（ルート直下）
+
+**sentry.server.config.ts**（サーバーサイド）:
 ```typescript
-// sentry.client.config.ts
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from '@sentry/nextjs';
 
 Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 0.1,
-  environment: process.env.NODE_ENV,
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 0.1,  // サーバーサイド10%サンプリング
+  environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
+  enabled: process.env.NODE_ENV === 'production',
 });
 ```
 
-### 環境変数（Sentry 使用時のみ）
+**sentry.edge.config.ts**（Edge Runtime）:
+```typescript
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 0.1,
+  environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
+  enabled: process.env.NODE_ENV === 'production',
+});
+```
+
+**instrumentation-client.ts**（クライアントサイド）:
+```typescript
+import * as Sentry from '@sentry/nextjs';
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 0.01,  // クライアント1%（UI最小限）
+  replaysSessionSampleRate: 0,  // Replay無効
+  replaysOnErrorSampleRate: 0,
+  environment: process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV,
+  enabled: process.env.NODE_ENV === 'production',
+});
+```
+
+**instrumentation.ts**（Next.js instrumentation hook）:
+```typescript
+import * as Sentry from '@sentry/nextjs';
+import type { Instrumentation } from 'next';
+
+export async function register() {
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./sentry.server.config');
+  }
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./sentry.edge.config');
+  }
+}
+
+export const onRequestError: Instrumentation.onRequestError = (...args) => {
+  Sentry.captureRequestError(...args);
+};
+```
+
+#### Step 3: next.config.ts修正
+
+```typescript
+import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
+
+const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: { bodySizeLimit: '2mb' },
+    clientTraceMetadata: ['sentry-trace', 'baggage'],
+  },
+};
+
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  telemetry: false,
+  silent: !process.env.CI,
+});
+```
+
+#### Step 4: エラーバウンダリ作成
+
+**src/app/global-error.tsx**:
+```tsx
+'use client';
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <html lang="ja">
+      <body>
+        <main style={{ padding: '2rem', textAlign: 'center' }}>
+          <h1>予期しないエラーが発生しました</h1>
+          <button onClick={() => reset()}>再試行</button>
+        </main>
+      </body>
+    </html>
+  );
+}
+```
+
+**src/app/error.tsx**:
+```tsx
+'use client';
+import * as Sentry from '@sentry/nextjs';
+import { useEffect } from 'react';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
+  return (
+    <main style={{ padding: '2rem', textAlign: 'center' }}>
+      <h2>エラーが発生しました</h2>
+      <button onClick={() => reset()}>再試行</button>
+    </main>
+  );
+}
+```
+
+### 環境変数（Sentry）
 
 | 変数名 | 必須 | 説明 |
 |--------|------|------|
-| `NEXT_PUBLIC_SENTRY_DSN` | △ | Sentry DSN（使用時のみ） |
-| `SENTRY_AUTH_TOKEN` | △ | ソースマップアップロード用 |
+| `SENTRY_DSN` | ○ | サーバーサイド用 DSN |
+| `NEXT_PUBLIC_SENTRY_DSN` | ○ | クライアント用 DSN |
+| `SENTRY_ORG` | ○ | Sentry 組織スラッグ |
+| `SENTRY_PROJECT` | ○ | Sentry プロジェクト名 |
+| `SENTRY_AUTH_TOKEN` | ○ | Source Maps アップロード用 |
+
+### 動作確認方法
+
+```typescript
+// src/app/api/sentry-test/route.ts（確認後削除）
+import * as Sentry from '@sentry/nextjs';
+import { NextResponse } from 'next/server';
+
+export async function GET() {
+  throw new Error('Sentry Test Error');
+}
+
+export async function POST() {
+  Sentry.captureMessage('Sentry Test Message', 'info');
+  await Sentry.flush(2000);
+  return NextResponse.json({ success: true });
+}
+```
+
+```bash
+# ローカル確認（enabled: true に一時変更）
+npm run dev
+curl http://localhost:3000/api/sentry-test
+
+# Sentryダッシュボードでエラー確認
+```
 
 ---
 
@@ -1735,6 +1886,11 @@ Sentry.init({
 | `CRON_SECRET` | ○ | Cron認証シークレット |
 | `RESEND_API_KEY` | ○ | Resend API キー |
 | `ALERT_EMAIL_TO` | ○ | 通知先メールアドレス |
+| `SENTRY_DSN` | ○ | Sentry サーバーサイド DSN |
+| `NEXT_PUBLIC_SENTRY_DSN` | ○ | Sentry クライアント DSN |
+| `SENTRY_ORG` | ○ | Sentry 組織スラッグ |
+| `SENTRY_PROJECT` | ○ | Sentry プロジェクト名 |
+| `SENTRY_AUTH_TOKEN` | ○ | Sentry Source Maps 用トークン |
 | `SYNC_MAX_CATCHUP_DAYS` | - | Cron Aの追いつき上限（デフォルト: 5） |
 | `INVESTOR_TYPES_WINDOW_DAYS` | - | Cron Cの取得窓（デフォルト: 60） |
 

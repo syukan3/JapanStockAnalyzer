@@ -93,10 +93,24 @@
 - [ ] docs/operations/manual-resync.md - 再実行手順
 - [ ] docs/operations/troubleshooting.md - 障害時追跡方法
 
+### Phase 8: Sentry 導入
+
+- [ ] @sentry/nextjs インストール
+- [ ] sentry.server.config.ts 作成
+- [ ] sentry.edge.config.ts 作成
+- [ ] instrumentation.ts 作成
+- [ ] instrumentation-client.ts 作成
+- [ ] next.config.ts を withSentryConfig でラップ
+- [ ] src/app/error.tsx 作成（ルートエラーバウンダリ）
+- [ ] src/app/global-error.tsx 作成（グローバルエラーバウンダリ）
+- [ ] .env.local.example に Sentry 環境変数追加
+- [ ] Vercel に Sentry 環境変数設定
+- [ ] 動作確認（テストエンドポイント作成→確認→削除）
+
 ## 依存関係
 
 ```
-Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7
+Phase 1 → Phase 2 → Phase 3 → Phase 4 → Phase 5 → Phase 6 → Phase 7 → Phase 8
 ```
 
 ## 技術スタック
