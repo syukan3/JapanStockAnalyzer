@@ -135,11 +135,11 @@ J-Quants API V2（2025年12月リリース）の主な変更点:
 
 ### Phase 7: 運用ドキュメント
 
-- [ ] docs/operations/README.md - 運用概要
-- [ ] docs/operations/env-variables.md - 環境変数一覧
-- [ ] docs/operations/cron-schedule.md - Cron時刻対応表
-- [ ] docs/operations/manual-resync.md - 再実行手順
-- [ ] docs/operations/troubleshooting.md - 障害時追跡方法
+- [x] docs/operations/README.md - 運用概要
+- [x] docs/operations/env-variables.md - 環境変数一覧
+- [x] docs/operations/cron-schedule.md - Cron時刻対応表
+- [x] docs/operations/manual-resync.md - 再実行手順
+- [x] docs/operations/troubleshooting.md - 障害時追跡方法
 
 ### Phase 8: Sentry 導入
 
