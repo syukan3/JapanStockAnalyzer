@@ -4,19 +4,20 @@
  * @description CRON_SECRET を使用した認証
  */
 
-import { timingSafeEqual } from 'crypto';
+import { timingSafeEqual, createHash } from 'crypto';
 import { createLogger } from '../utils/logger';
 
 /**
  * タイミングセーフな文字列比較
  *
- * @description timing attack を防ぐため、一定時間で比較を完了する
+ * @description timing attack を防ぐため、ハッシュ化して一定時間で比較を完了する
+ * 長さが異なる場合でもハッシュ長が同じになるため、長さ情報の漏洩を防ぐ
  */
 function secureCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  // ハッシュ化することで長さを統一し、タイミング情報を隠す
+  const hashA = createHash('sha256').update(a).digest();
+  const hashB = createHash('sha256').update(b).digest();
+  return timingSafeEqual(hashA, hashB);
 }
 
 const logger = createLogger({ module: 'cron-auth' });
