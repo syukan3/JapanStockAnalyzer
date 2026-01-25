@@ -21,22 +21,22 @@
 
 ### Phase 2: Supabase マイグレーション
 
-- [ ] 00001_create_schemas.sql - スキーマ作成 (jquants_core, jquants_ingest)
-- [ ] 00002_create_ingest_tables.sql - ジョブ管理テーブル
-  - [ ] job_locks
-  - [ ] job_runs
-  - [ ] job_run_items
-  - [ ] job_heartbeat
-- [ ] 00003_create_core_tables.sql - データテーブル
-  - [ ] trading_calendar
-  - [ ] equity_master_snapshot
-  - [ ] equity_bar_daily
-  - [ ] topix_bar_daily
-  - [ ] financial_disclosure
-  - [ ] earnings_calendar
-  - [ ] investor_type_trading
-- [ ] 00004_enable_rls.sql - RLS設定
-- [ ] 00005_create_monitoring_views.sql - 監視用ビュー
+- [x] 00001_create_schemas.sql - スキーマ作成 (jquants_core, jquants_ingest)
+- [x] 00002_create_ingest_tables.sql - ジョブ管理テーブル
+  - [x] job_locks
+  - [x] job_runs
+  - [x] job_run_items
+  - [x] job_heartbeat
+- [x] 00003_create_core_tables.sql - データテーブル
+  - [x] trading_calendar
+  - [x] equity_master_snapshot
+  - [x] equity_bar_daily
+  - [x] topix_bar_daily
+  - [x] financial_disclosure
+  - [x] earnings_calendar
+  - [x] investor_type_trading
+- [x] 00004_enable_rls.sql - RLS設定
+- [x] 00005_create_monitoring_views.sql - 監視用ビュー
 
 ### Phase 3: 基盤ライブラリ
 
