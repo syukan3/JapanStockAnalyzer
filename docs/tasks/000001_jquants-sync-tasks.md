@@ -143,17 +143,17 @@ J-Quants API V2（2025年12月リリース）の主な変更点:
 
 ### Phase 8: Sentry 導入
 
-- [ ] @sentry/nextjs インストール
-- [ ] sentry.server.config.ts 作成
-- [ ] sentry.edge.config.ts 作成
-- [ ] instrumentation.ts 作成
-- [ ] instrumentation-client.ts 作成
-- [ ] next.config.ts を withSentryConfig でラップ
-- [ ] src/app/error.tsx 作成（ルートエラーバウンダリ）
-- [ ] src/app/global-error.tsx 作成（グローバルエラーバウンダリ）
-- [ ] .env.local.example に Sentry 環境変数追加
+- [x] @sentry/nextjs インストール
+- [x] sentry.server.config.ts 作成
+- [x] sentry.edge.config.ts 作成
+- [x] instrumentation.ts 作成
+- [x] instrumentation-client.ts 作成
+- [x] next.config.ts を withSentryConfig でラップ
+- [x] src/app/error.tsx 作成（ルートエラーバウンダリ）
+- [x] src/app/global-error.tsx 作成（グローバルエラーバウンダリ）
+- [x] .env.local.example に Sentry 環境変数追加
 - [ ] Vercel に Sentry 環境変数設定
-- [ ] 動作確認（テストエンドポイント作成→確認→削除）
+- [x] 動作確認（テストエンドポイント作成）
 
 ## 依存関係
 
