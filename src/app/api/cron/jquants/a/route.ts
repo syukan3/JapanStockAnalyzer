@@ -98,23 +98,19 @@ export async function POST(request: Request): Promise<Response> {
     logger.info('Executing Cron A handler', { runId, dataset });
     const result = await handleCronA(dataset, runId);
 
-    // 7. ジョブ完了（job_runs UPDATE）
-    await completeJobRun(
-      supabaseIngest,
-      runId,
-      result.success ? 'success' : 'failed',
-      result.error
-    );
-
-    // 8. ハートビート更新（success/failed）
-    await updateHeartbeat(supabaseIngest, {
-      jobName: JOB_NAME,
-      status: result.success ? 'success' : 'failed',
-      runId,
-      targetDate: result.targetDate ?? undefined,
-      error: result.error,
-      meta: { dataset, fetched: result.fetched, inserted: result.inserted },
-    });
+    // 7. ジョブ完了 & ハートビート更新（並列実行）
+    const finalStatus = result.success ? 'success' : 'failed';
+    await Promise.all([
+      completeJobRun(supabaseIngest, runId, finalStatus, result.error),
+      updateHeartbeat(supabaseIngest, {
+        jobName: JOB_NAME,
+        status: finalStatus,
+        runId,
+        targetDate: result.targetDate ?? undefined,
+        error: result.error,
+        meta: { dataset, fetched: result.fetched, inserted: result.inserted },
+      }),
+    ]);
 
     logger.info('Cron A completed', {
       runId,
