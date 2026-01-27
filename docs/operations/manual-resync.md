@@ -21,7 +21,66 @@
 - キャッチアップ機能により、漏れた日付を自動検出して処理します
 - 同一日付のデータは冪等性により重複しません（UPSERT）
 
-## 2. curl での直接呼び出し
+## 2. ローカル環境でのテスト
+
+開発時にcronジョブの動作を確認する方法です。
+
+### 前提条件
+
+1. `.env.local` に以下の環境変数が設定されていること:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   SUPABASE_SERVICE_ROLE_KEY=...
+   JQUANTS_API_KEY=...
+   CRON_SECRET=your-local-cron-secret  # 任意の値
+   ```
+
+2. Supabase への接続:
+   - **本番DB**: 上記の環境変数で本番Supabaseに接続
+   - **ローカルDB**: `supabase start` でローカルDBを起動し、ローカル用の接続情報を設定
+
+### 手順
+
+1. 開発サーバーを起動:
+   ```bash
+   npm run dev
+   ```
+
+2. 別ターミナルからcurlで呼び出し:
+   ```bash
+   # Cron A - カレンダーデータ
+   curl -X POST "http://localhost:3000/api/cron/jquants/a" \
+     -H "Authorization: Bearer your-local-cron-secret" \
+     -H "Content-Type: application/json" \
+     -d '{"dataset": "calendar"}'
+
+   # Cron A - 株価データ
+   curl -X POST "http://localhost:3000/api/cron/jquants/a" \
+     -H "Authorization: Bearer your-local-cron-secret" \
+     -H "Content-Type: application/json" \
+     -d '{"dataset": "equity_bars"}'
+
+   # Cron B - 決算発表予定
+   curl -X POST "http://localhost:3000/api/cron/jquants/b" \
+     -H "Authorization: Bearer your-local-cron-secret" \
+     -H "Content-Type: application/json" \
+     -d '{"dataset": "earnings_calendar"}'
+
+   # Cron C - 投資部門別
+   curl -X POST "http://localhost:3000/api/cron/jquants/c" \
+     -H "Authorization: Bearer your-local-cron-secret" \
+     -H "Content-Type: application/json" \
+     -d '{"dataset": "investor_types"}'
+   ```
+
+### 注意事項
+
+- `Authorization: Bearer` の値は `.env.local` の `CRON_SECRET` と一致させる
+- ローカル実行でも本番DBに接続している場合は実データが更新される
+- J-Quants API のレート制限（Light: 60リクエスト/分）に注意
+
+## 3. curl での直接呼び出し（本番環境）
 
 特定のデータセットのみ再実行したい場合に使用します。
 
@@ -84,7 +143,7 @@ curl -X POST "https://your-app.vercel.app/api/cron/jquants/c" \
   -d '{"dataset": "integrity_check"}'
 ```
 
-## 3. Supabase からのデータ確認・修正
+## 4. Supabase からのデータ確認・修正
 
 ### データ欠損の確認
 
@@ -141,7 +200,7 @@ WHERE job_name = 'cron_a'
 
 > **注意**: 成功レコードは削除しないでください。冪等性チェックに使用されます。
 
-## 4. ロック解除
+## 5. ロック解除
 
 ジョブがタイムアウトしてロックが残った場合の対処。
 
@@ -161,7 +220,7 @@ SET locked_until = NOW() - INTERVAL '1 second'
 WHERE job_name = 'cron_a';
 ```
 
-## 5. 大量データの再取得
+## 6. 大量データの再取得
 
 初期導入時や大規模なデータ欠損の場合。
 
@@ -189,7 +248,7 @@ for i in {1..10}; do
 done
 ```
 
-## 6. レスポンス確認
+## 7. レスポンス確認
 
 再実行後のレスポンス例:
 
