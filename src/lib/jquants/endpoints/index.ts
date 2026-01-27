@@ -35,14 +35,21 @@ export {
 export {
   syncEquityMaster,
   syncEquityMasterForDate,
+  syncEquityMasterSCD,
   fetchEquityMaster,
   toEquityMasterRecord,
+  toEquityMasterSCDRecord,
+  isSameEquityMaster,
   getEquityMasterFromDB,
   getEquityMasterByDateFromDB,
   getAllEquityMasterByDateFromDB,
   getLatestEquityMasterDateFromDB,
+  getEquityMasterAsOfDate,
+  getAllCurrentEquityMaster,
+  getEquityMasterHistory,
   type FetchEquityMasterParams,
   type SyncEquityMasterResult,
+  type SyncEquityMasterSCDResult,
 } from './equity-master';
 
 // 株価四本値（日足）

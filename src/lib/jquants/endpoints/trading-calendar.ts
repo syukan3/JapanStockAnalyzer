@@ -48,7 +48,6 @@ export function toTradingCalendarRecord(item: TradingCalendarItem): TradingCalen
     calendar_date: item.Date,
     hol_div: item.HolDiv,
     is_business_day: isBusinessDay(item.HolDiv),
-    raw_json: item,
   };
 }
 

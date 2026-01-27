@@ -36,7 +36,10 @@ export function toEarningsCalendarRecord(item: EarningsCalendarItem): EarningsCa
   return {
     announcement_date: item.Date,
     local_code: item.Code,
-    raw_json: item,
+    company_name: item.CoName,
+    fiscal_year: item.FY,
+    fiscal_quarter: item.FQ,
+    sector_name: item.SectorNm,
   };
 }
 
@@ -176,11 +179,18 @@ export async function getEarningsCalendarByDateFromDB(
 /** 決算発表予定取得時の基本カラム（raw_json除外） */
 export type EarningsCalendarBasicRecord = Pick<
   EarningsCalendarRecord,
-  'announcement_date' | 'local_code' | 'ingested_at'
+  | 'announcement_date'
+  | 'local_code'
+  | 'company_name'
+  | 'fiscal_year'
+  | 'fiscal_quarter'
+  | 'sector_name'
+  | 'ingested_at'
 >;
 
 /** 基本カラムのSELECT文字列 */
-const BASIC_COLUMNS = 'announcement_date,local_code,ingested_at';
+const BASIC_COLUMNS =
+  'announcement_date,local_code,company_name,fiscal_year,fiscal_quarter,sector_name,ingested_at';
 
 /** limit の最大値（銘柄別） */
 const MAX_CODE_LIMIT = 1000;
@@ -352,12 +362,17 @@ export async function countEarningsByDateFromDB(announcementDate: string): Promi
 }
 
 /**
- * raw_jsonから詳細データを抽出するヘルパー
- *
- * @param record 決算発表予定レコード
+ * @deprecated raw_jsonは削除されました。レコードから直接フィールドを参照してください。
  */
-export function extractEarningsData(record: EarningsCalendarRecord): EarningsCalendarItem {
-  return record.raw_json;
+export function extractEarningsData(record: EarningsCalendarRecord): Partial<EarningsCalendarItem> {
+  return {
+    Date: record.announcement_date,
+    Code: record.local_code,
+    CoName: record.company_name,
+    FY: record.fiscal_year,
+    FQ: record.fiscal_quarter,
+    SectorNm: record.sector_name,
+  };
 }
 
 /**

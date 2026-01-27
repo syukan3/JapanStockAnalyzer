@@ -80,7 +80,18 @@ export function toFinancialDisclosureRecord(item: FinancialSummaryItem): Financi
     disclosed_date: item.DiscDate,
     disclosed_time: item.DiscTime,
     local_code: item.Code,
-    raw_json: item,
+    sales: item.Sales,
+    operating_profit: item.OP,
+    ordinary_profit: item.OdP,
+    net_income: item.NP,
+    eps: item.EPS,
+    bps: item.BPS,
+    roe: item.ROE,
+    fiscal_year_start: item.CurFYSt,
+    fiscal_year_end: item.CurFYEn,
+    period_type: item.CurPerType,
+    doc_type: item.DocType,
+    company_name: item.CoName as string | undefined,
   };
 }
 
@@ -228,11 +239,28 @@ export async function syncFinancialSummaryForCode(
 /** 財務開示取得時の基本カラム（raw_json除外） */
 export type FinancialDisclosureBasicRecord = Pick<
   FinancialDisclosureRecord,
-  'disclosure_id' | 'disclosed_date' | 'disclosed_time' | 'local_code' | 'ingested_at'
+  | 'disclosure_id'
+  | 'disclosed_date'
+  | 'disclosed_time'
+  | 'local_code'
+  | 'sales'
+  | 'operating_profit'
+  | 'ordinary_profit'
+  | 'net_income'
+  | 'eps'
+  | 'bps'
+  | 'roe'
+  | 'fiscal_year_start'
+  | 'fiscal_year_end'
+  | 'period_type'
+  | 'doc_type'
+  | 'company_name'
+  | 'ingested_at'
 >;
 
 /** 基本カラムのSELECT文字列 */
-const BASIC_COLUMNS = 'disclosure_id,disclosed_date,disclosed_time,local_code,ingested_at';
+const BASIC_COLUMNS =
+  'disclosure_id,disclosed_date,disclosed_time,local_code,sales,operating_profit,ordinary_profit,net_income,eps,bps,roe,fiscal_year_start,fiscal_year_end,period_type,doc_type,company_name,ingested_at';
 
 /**
  * DBから財務開示を取得（単一開示）
@@ -400,10 +428,26 @@ export async function getLatestFinancialDisclosureDateFromDB(): Promise<string |
 }
 
 /**
- * raw_jsonから財務データを抽出するヘルパー
- *
- * @param record 財務開示レコード
+ * @deprecated raw_jsonは削除されました。レコードから直接フィールドを参照してください。
  */
-export function extractFinancialData(record: FinancialDisclosureRecord): FinancialSummaryItem {
-  return record.raw_json;
+export function extractFinancialData(
+  record: FinancialDisclosureRecord
+): Partial<FinancialSummaryItem> {
+  return {
+    DiscDate: record.disclosed_date,
+    DiscTime: record.disclosed_time,
+    Code: record.local_code,
+    Sales: record.sales,
+    OP: record.operating_profit,
+    OdP: record.ordinary_profit,
+    NP: record.net_income,
+    EPS: record.eps,
+    BPS: record.bps,
+    ROE: record.roe,
+    CurFYSt: record.fiscal_year_start,
+    CurFYEn: record.fiscal_year_end,
+    CurPerType: record.period_type,
+    DocType: record.doc_type,
+    CoName: record.company_name,
+  };
 }

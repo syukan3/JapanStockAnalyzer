@@ -41,7 +41,6 @@ export function toTopixBarDailyRecord(item: TopixBarDailyItem): TopixBarDailyRec
     high: item.H,
     low: item.L,
     close: item.C,
-    raw_json: item,
   };
 }
 

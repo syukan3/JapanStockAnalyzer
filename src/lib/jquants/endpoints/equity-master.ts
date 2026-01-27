@@ -5,17 +5,24 @@
  * @see https://jpx-jquants.com/en/spec
  *
  * NOTE: 非営業日を指定した場合、APIは次営業日の情報を返す
+ *
+ * SCD Type 2 実装:
+ * - 変更があった場合のみ新レコードを追加
+ * - is_current=true は各銘柄で1レコードのみ
+ * - valid_from/valid_to で有効期間を管理
  */
 
 import { JQuantsClient, createJQuantsClient } from '../client';
-import type { EquityMasterItem, EquityMasterSnapshotRecord } from '../types';
+import type { EquityMasterItem, EquityMasterSnapshotRecord, EquityMasterRecord } from '../types';
 import { getSupabaseAdmin } from '../../supabase/admin';
 import { POSTGREST_ERROR_CODES } from '../../supabase/errors';
 import { batchUpsert } from '../../utils/batch';
 import { createLogger, type LogContext } from '../../utils/logger';
 
 const TABLE_NAME = 'equity_master_snapshot';
+const TABLE_NAME_SCD = 'equity_master';
 const ON_CONFLICT = 'as_of_date,local_code';
+const ON_CONFLICT_SCD = 'local_code,valid_from';
 
 export interface FetchEquityMasterParams {
   /** 銘柄コード (5桁) */
@@ -34,7 +41,8 @@ export interface SyncEquityMasterResult {
 }
 
 /**
- * APIレスポンスをDBレコード形式に変換
+ * APIレスポンスをDBレコード形式に変換（レガシー用）
+ * @deprecated Phase 4以降は toEquityMasterSCDRecord を使用
  */
 export function toEquityMasterRecord(item: EquityMasterItem): EquityMasterSnapshotRecord {
   return {
@@ -51,8 +59,60 @@ export function toEquityMasterRecord(item: EquityMasterItem): EquityMasterSnapsh
     market_name: item.MktNm,
     margin_code: item.MarginCode,
     margin_code_name: item.MarginCodeNm,
-    raw_json: item,
   };
+}
+
+/**
+ * APIレスポンスをSCD Type 2レコード形式に変換
+ */
+export function toEquityMasterSCDRecord(item: EquityMasterItem): EquityMasterRecord {
+  return {
+    local_code: item.Code,
+    company_name: item.CoName,
+    company_name_en: item.CoNameEn,
+    sector17_code: item.S17,
+    sector17_name: item.S17Nm,
+    sector33_code: item.S33,
+    sector33_name: item.S33Nm,
+    scale_category: item.ScaleCat,
+    market_code: item.Mkt,
+    market_name: item.MktNm,
+    margin_code: item.MarginCode,
+    margin_code_name: item.MarginCodeNm,
+    valid_from: item.Date,
+    valid_to: null,
+    is_current: true,
+  };
+}
+
+/** 比較対象のフィールド */
+const COMPARE_FIELDS = [
+  'company_name',
+  'company_name_en',
+  'sector17_code',
+  'sector17_name',
+  'sector33_code',
+  'sector33_name',
+  'scale_category',
+  'market_code',
+  'market_name',
+  'margin_code',
+  'margin_code_name',
+] as const;
+
+/**
+ * 2つのEquityMasterレコードが同一かどうかを比較
+ */
+export function isSameEquityMaster(
+  a: EquityMasterRecord | EquityMasterSnapshotRecord,
+  b: EquityMasterRecord | EquityMasterSnapshotRecord
+): boolean {
+  for (const field of COMPARE_FIELDS) {
+    if (a[field] !== b[field]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -337,4 +397,239 @@ export async function getLatestEquityMasterDateFromDB(): Promise<string | null> 
   }
 
   return data?.as_of_date ?? null;
+}
+
+// ============================================
+// SCD Type 2 関連関数
+// ============================================
+
+/** SCD Type 2 同期結果 */
+export interface SyncEquityMasterSCDResult {
+  /** APIから取得した件数 */
+  fetched: number;
+  /** 新規追加した件数 */
+  inserted: number;
+  /** 更新（クローズ + 新規）した件数 */
+  updated: number;
+  /** 上場廃止処理した件数 */
+  delisted: number;
+  /** エラー一覧 */
+  errors: Error[];
+}
+
+/** SCD基本カラム（クエリ用） */
+const SCD_BASIC_COLUMNS =
+  'id,local_code,company_name,company_name_en,sector17_code,sector17_name,sector33_code,sector33_name,scale_category,market_code,market_name,margin_code,margin_code_name,valid_from,valid_to,is_current,created_at';
+
+/**
+ * 銘柄マスタをSCD Type 2方式で同期
+ *
+ * 1. APIから最新データを取得
+ * 2. 現在有効なレコードと比較
+ * 3. 変更があれば旧レコードをクローズし新レコードを追加
+ * 4. APIに存在しない銘柄は上場廃止としてクローズ
+ *
+ * @param date 同期日付 (YYYY-MM-DD)
+ * @param options オプション
+ */
+export async function syncEquityMasterSCD(
+  date: string,
+  options?: {
+    client?: JQuantsClient;
+    logContext?: LogContext;
+  }
+): Promise<SyncEquityMasterSCDResult> {
+  const client = options?.client ?? createJQuantsClient({ logContext: options?.logContext });
+  const logger = createLogger({ dataset: 'equity_master', ...options?.logContext });
+  const supabase = getSupabaseAdmin();
+
+  const timer = logger.startTimer('Sync equity master SCD');
+
+  try {
+    // 1. APIから最新データを取得
+    logger.info('Fetching equity master', { date });
+    const items = await fetchEquityMaster(client, { date });
+
+    if (items.length === 0) {
+      logger.info('No equity master data found');
+      timer.end({ fetched: 0, inserted: 0, updated: 0, delisted: 0 });
+      return { fetched: 0, inserted: 0, updated: 0, delisted: 0, errors: [] };
+    }
+
+    logger.info('Fetched equity master', { rowCount: items.length });
+
+    // APIレスポンスから実際の有効日を取得（非営業日指定時は次営業日が返る）
+    // 全アイテムは同一日付を持つため、最初のアイテムから取得
+    const effectiveDate = items[0].Date;
+    logger.info('Effective date from API', { requestedDate: date, effectiveDate });
+
+    // 2. 現在有効な全レコードを取得
+    const { data: currentRecords, error: fetchError } = await supabase
+      .from(TABLE_NAME_SCD)
+      .select(SCD_BASIC_COLUMNS)
+      .eq('is_current', true);
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    // Map for quick lookup
+    const currentMap = new Map<string, EquityMasterRecord>();
+    for (const record of (currentRecords ?? []) as EquityMasterRecord[]) {
+      currentMap.set(record.local_code, record);
+    }
+
+    // 3. 差分を検出
+    const toInsert: EquityMasterRecord[] = [];
+    const toClose: { id: number; valid_to: string }[] = [];
+    const apiCodeSet = new Set<string>();
+
+    for (const item of items) {
+      apiCodeSet.add(item.Code);
+      const newRecord = toEquityMasterSCDRecord(item);
+      const existing = currentMap.get(item.Code);
+
+      if (!existing) {
+        // 新規銘柄
+        toInsert.push(newRecord);
+      } else if (!isSameEquityMaster(existing, newRecord)) {
+        // 変更あり → 旧レコードをクローズして新レコード追加
+        // valid_toはexclusive（newRecord.valid_fromと同じ日付を設定）
+        toClose.push({ id: existing.id!, valid_to: newRecord.valid_from });
+        toInsert.push(newRecord);
+      }
+      // 変更なし → 何もしない
+    }
+
+    // 4. 上場廃止処理（APIに存在しない銘柄）
+    const delistedRecords: { id: number; valid_to: string }[] = [];
+    for (const [code, record] of currentMap) {
+      if (!apiCodeSet.has(code)) {
+        // 上場廃止もeffectiveDateでクローズ（APIから返された有効日）
+        delistedRecords.push({ id: record.id!, valid_to: effectiveDate });
+      }
+    }
+
+    // 5. DB更新を実行
+    const errors: Error[] = [];
+
+    // 5a. 旧レコードをクローズ（更新 + 上場廃止）
+    const allToClose = [...toClose, ...delistedRecords];
+    if (allToClose.length > 0) {
+      for (const { id, valid_to } of allToClose) {
+        const { error } = await supabase
+          .from(TABLE_NAME_SCD)
+          .update({ valid_to, is_current: false })
+          .eq('id', id);
+
+        if (error) {
+          errors.push(new Error(`Failed to close record id=${id}: ${error.message}`));
+        }
+      }
+      logger.info('Closed records', {
+        updated: toClose.length,
+        delisted: delistedRecords.length,
+      });
+    }
+
+    // 5b. 新レコードを追加
+    let inserted = 0;
+    if (toInsert.length > 0) {
+      const result = await batchUpsert(supabase, TABLE_NAME_SCD, toInsert, ON_CONFLICT_SCD, {
+        onBatchComplete: (batchIndex, count, total) => {
+          logger.debug('Batch complete', { batchIndex, inserted: count, total });
+        },
+      });
+      inserted = result.inserted;
+      errors.push(...result.errors);
+    }
+
+    timer.end({
+      fetched: items.length,
+      inserted,
+      updated: toClose.length,
+      delisted: delistedRecords.length,
+    });
+
+    return {
+      fetched: items.length,
+      inserted,
+      updated: toClose.length,
+      delisted: delistedRecords.length,
+      errors,
+    };
+  } catch (error) {
+    timer.endWithError(error as Error);
+    throw error;
+  }
+}
+
+/**
+ * 指定日時点のEquityMasterを取得（SCD Type 2）
+ *
+ * @param localCode 銘柄コード (5桁)
+ * @param asOfDate 日付 (YYYY-MM-DD)
+ */
+export async function getEquityMasterAsOfDate(
+  localCode: string,
+  asOfDate: string
+): Promise<EquityMasterRecord | null> {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME_SCD)
+    .select(SCD_BASIC_COLUMNS)
+    .eq('local_code', localCode)
+    .lte('valid_from', asOfDate)
+    .or(`valid_to.is.null,valid_to.gt.${asOfDate}`)
+    .single();
+
+  if (error) {
+    if (error.code === POSTGREST_ERROR_CODES.NO_ROWS_RETURNED) {
+      return null;
+    }
+    throw error;
+  }
+
+  return data as EquityMasterRecord;
+}
+
+/**
+ * 全銘柄の現在有効データを取得（SCD Type 2）
+ */
+export async function getAllCurrentEquityMaster(): Promise<EquityMasterRecord[]> {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME_SCD)
+    .select(SCD_BASIC_COLUMNS)
+    .eq('is_current', true)
+    .order('local_code', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as EquityMasterRecord[];
+}
+
+/**
+ * 指定銘柄の履歴を取得（SCD Type 2）
+ *
+ * @param localCode 銘柄コード (5桁)
+ */
+export async function getEquityMasterHistory(localCode: string): Promise<EquityMasterRecord[]> {
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from(TABLE_NAME_SCD)
+    .select(SCD_BASIC_COLUMNS)
+    .eq('local_code', localCode)
+    .order('valid_from', { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return (data ?? []) as EquityMasterRecord[];
 }

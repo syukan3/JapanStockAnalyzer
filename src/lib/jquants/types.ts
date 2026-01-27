@@ -542,12 +542,12 @@ export interface TradingCalendarRecord {
   calendar_date: string;
   hol_div: string;
   is_business_day: boolean;
-  raw_json: TradingCalendarItem;
   ingested_at?: string;
 }
 
 /**
- * equity_master_snapshot テーブル用
+ * equity_master_snapshot テーブル用（互換ビュー）
+ * @deprecated Phase 4以降はEquityMasterRecordを使用
  */
 export interface EquityMasterSnapshotRecord {
   as_of_date: string;
@@ -563,16 +563,34 @@ export interface EquityMasterSnapshotRecord {
   market_name?: string;
   margin_code?: string;
   margin_code_name?: string;
-  raw_json: EquityMasterItem;
   ingested_at?: string;
 }
 
 /**
+ * equity_master テーブル用 (SCD Type 2)
+ */
+export interface EquityMasterRecord {
+  id?: number;
+  local_code: string;
+  company_name?: string;
+  company_name_en?: string;
+  sector17_code?: string;
+  sector17_name?: string;
+  sector33_code?: string;
+  sector33_name?: string;
+  scale_category?: string;
+  market_code?: string;
+  market_name?: string;
+  margin_code?: string;
+  margin_code_name?: string;
+  valid_from: string;
+  valid_to?: string | null;
+  is_current: boolean;
+  created_at?: string;
+}
+
+/**
  * equity_bar_daily テーブル用
- *
- * NOTE: expandSessions使用時、raw_jsonはストレージ効率のため
- * 最初のレコード（通常DAYセッション）のみに格納。
- * 他のセッション（AM/PM）のraw_jsonはnullとなる。
  */
 export interface EquityBarDailyRecord {
   trade_date: string;
@@ -590,7 +608,6 @@ export interface EquityBarDailyRecord {
   adj_low?: number;
   adj_close?: number;
   adj_volume?: number;
-  raw_json: EquityBarDailyItem | null;
   ingested_at?: string;
 }
 
@@ -603,7 +620,6 @@ export interface TopixBarDailyRecord {
   high?: number;
   low?: number;
   close?: number;
-  raw_json: TopixBarDailyItem;
   ingested_at?: string;
 }
 
@@ -615,7 +631,18 @@ export interface FinancialDisclosureRecord {
   disclosed_date?: string;
   disclosed_time?: string;
   local_code?: string;
-  raw_json: FinancialSummaryItem;
+  sales?: number;
+  operating_profit?: number;
+  ordinary_profit?: number;
+  net_income?: number;
+  eps?: number;
+  bps?: number;
+  roe?: number;
+  fiscal_year_start?: string;
+  fiscal_year_end?: string;
+  period_type?: string;
+  doc_type?: string;
+  company_name?: string;
   ingested_at?: string;
 }
 
@@ -625,16 +652,15 @@ export interface FinancialDisclosureRecord {
 export interface EarningsCalendarRecord {
   announcement_date: string;
   local_code: string;
-  raw_json: EarningsCalendarItem;
+  company_name?: string;
+  fiscal_year?: string;
+  fiscal_quarter?: string;
+  sector_name?: string;
   ingested_at?: string;
 }
 
 /**
  * investor_type_trading テーブル用（縦持ち）
- *
- * NOTE: raw_jsonはストレージ効率のため最初のレコードのみに完全格納。
- * 他のレコードは空オブジェクト{}となる。元データが必要な場合は
- * investor_type='proprietary', metric='sales'のレコードを参照すること。
  */
 export interface InvestorTypeTradingRecord {
   published_date: string;
@@ -644,7 +670,6 @@ export interface InvestorTypeTradingRecord {
   investor_type: string;
   metric: string;
   value_kjpy?: number;
-  raw_json: InvestorTypeTradingItem | Record<string, never>;
   ingested_at?: string;
 }
 

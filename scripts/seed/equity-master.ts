@@ -18,26 +18,25 @@ async function main(): Promise<SeedResult> {
 
   const { to } = parseArgs();
 
-  console.log('Starting Equity Master Seed');
-  console.log(`  Date: ${to} (latest snapshot)`);
+  console.log('Starting Equity Master Seed (SCD Type 2)');
+  console.log(`  Date: ${to}`);
 
   const timer = startTimer();
 
   // 動的インポート（環境変数ロード後）
-  const { syncEquityMasterForDate } = await import('../../src/lib/jquants/endpoints/equity-master');
+  const { syncEquityMasterSCD } = await import('../../src/lib/jquants/endpoints/equity-master');
 
-  // 銘柄マスタは1リクエストで全銘柄取得可能
-  // 最新日付のスナップショットを取得
+  // SCD Type 2方式で銘柄マスタを同期
   const progress = createProgress(1, 'equity_master');
 
   try {
-    const result = await syncEquityMasterForDate(to);
+    const result = await syncEquityMasterSCD(to);
     progress.done();
 
     const seedResult: SeedResult = {
       name: 'Equity Master',
       fetched: result.fetched,
-      inserted: result.inserted,
+      inserted: result.inserted + result.updated,
       errors: result.errors,
       durationMs: timer(),
     };

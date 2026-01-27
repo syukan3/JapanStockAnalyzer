@@ -22,7 +22,7 @@ import {
   syncEquityBarsDailyForDate,
   syncTopixBarsDailyForDate,
   syncFinancialSummaryForDate,
-  syncEquityMasterForDate,
+  syncEquityMasterSCD,
 } from '../../jquants/endpoints';
 
 // Cronユーティリティ
@@ -200,21 +200,23 @@ async function syncFinancial(
 }
 
 /**
- * 銘柄マスタを同期（前営業日分）
+ * 銘柄マスタを同期（SCD Type 2方式）
  */
 async function syncEquityMaster(
   targetDate: string,
   logContext: LogContext
 ): Promise<CronAResult> {
-  const timer = logger.startTimer('Sync equity master');
+  const timer = logger.startTimer('Sync equity master SCD');
 
   try {
-    const result = await syncEquityMasterForDate(targetDate, { logContext });
+    const result = await syncEquityMasterSCD(targetDate, { logContext });
 
     timer.end({
       targetDate,
       fetched: result.fetched,
       inserted: result.inserted,
+      updated: result.updated,
+      delisted: result.delisted,
     });
 
     return {
@@ -222,7 +224,7 @@ async function syncEquityMaster(
       dataset: 'equity_master',
       targetDate,
       fetched: result.fetched,
-      inserted: result.inserted,
+      inserted: result.inserted + result.updated,
     };
   } catch (error) {
     timer.endWithError(error as Error);

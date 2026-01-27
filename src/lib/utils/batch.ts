@@ -10,15 +10,19 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 /**
  * テーブル別バッチサイズ最適化
  * Supabase 1MB/リクエスト制限を考慮（JSONオーバーヘッド含め750KB未満に設定）
+ *
+ * NOTE: raw_json削除後はより小さなレコードサイズになり、
+ * バッチサイズを増やせるが、安全マージンを維持
  */
 const BATCH_SIZES: Record<string, number> = {
-  equity_bar_daily: 500,           // ~1.5KB/行 × 500 = 750KB
-  equity_master_snapshot: 250,     // ~3KB/行 × 250 = 750KB
-  investor_type_trading: 1000,     // ~0.7KB/行 × 1000 = 700KB
-  financial_disclosure: 300,       // ~2KB/行 × 300 = 600KB
-  earnings_calendar: 700,          // ~1KB/行 × 700 = 700KB
-  trading_calendar: 1500,          // ~0.5KB/行 × 1500 = 750KB
-  topix_bar_daily: 1500,           // ~0.5KB/行 × 1500 = 750KB
+  equity_bar_daily: 1000,          // ~0.5KB/行 × 1000 = 500KB (raw_json削除後)
+  equity_master_snapshot: 500,     // ~1KB/行 × 500 = 500KB (raw_json削除後)
+  equity_master: 500,              // ~0.5KB/行 × 500 = 250KB (SCD Type 2)
+  investor_type_trading: 2000,     // ~0.3KB/行 × 2000 = 600KB (raw_json削除後)
+  financial_disclosure: 500,       // ~1KB/行 × 500 = 500KB (raw_json削除後)
+  earnings_calendar: 1000,         // ~0.5KB/行 × 1000 = 500KB (raw_json削除後)
+  trading_calendar: 2000,          // ~0.2KB/行 × 2000 = 400KB (raw_json削除後)
+  topix_bar_daily: 2000,           // ~0.2KB/行 × 2000 = 400KB (raw_json削除後)
 };
 
 const DEFAULT_BATCH_SIZE = 500;

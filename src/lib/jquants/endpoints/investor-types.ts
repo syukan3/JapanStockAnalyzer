@@ -106,10 +106,6 @@ export const METRIC_NAMES: Record<Metric, string> = {
  * APIレスポンスを縦持ちレコードに変換
  *
  * 1つのAPIレスポンスから 13投資主体 × 4指標 = 52レコードを生成
- *
- * NOTE: raw_jsonはストレージ効率のため最初のレコード（proprietary/sales）のみに完全格納。
- * 他のレコードは空オブジェクト{}となる。元データが必要な場合は
- * investor_type='proprietary', metric='sales'のレコードを参照すること。
  */
 export function toInvestorTypeTradingRecords(
   item: InvestorTypeTradingItem
@@ -122,8 +118,6 @@ export function toInvestorTypeTradingRecords(
     end_date: item.EnDate,
     section: item.Section,
   };
-
-  let isFirstRecord = true;
 
   // 各投資主体について指標を抽出
   for (const investorType of INVESTOR_TYPES) {
@@ -138,10 +132,7 @@ export function toInvestorTypeTradingRecords(
           investor_type: INVESTOR_TYPE_DB_NAMES[investorType],
           metric: METRIC_NAMES[metricKey],
           value_kjpy: value as number,
-          // raw_jsonは最初のレコードのみに完全格納、他は空オブジェクト（DB NOT NULL制約対応）
-          raw_json: isFirstRecord ? item : ({} as InvestorTypeTradingItem),
         });
-        isFirstRecord = false;
       }
     }
   }

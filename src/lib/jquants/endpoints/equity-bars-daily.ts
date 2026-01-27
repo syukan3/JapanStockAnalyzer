@@ -67,7 +67,6 @@ export function toEquityBarDailyRecord(
       adj_low: item.MAdjL,
       adj_close: item.MAdjC,
       adj_volume: item.MAdjVo,
-      raw_json: item,
     };
   }
 
@@ -88,7 +87,6 @@ export function toEquityBarDailyRecord(
       adj_low: item.AAdjL,
       adj_close: item.AAdjC,
       adj_volume: item.AAdjVo,
-      raw_json: item,
     };
   }
 
@@ -109,7 +107,6 @@ export function toEquityBarDailyRecord(
     adj_low: item.AdjL,
     adj_close: item.AdjC,
     adj_volume: item.AdjVo,
-    raw_json: item,
   };
 }
 
@@ -118,44 +115,23 @@ export function toEquityBarDailyRecord(
  *
  * 1つのAPIレスポンスから DAY, AM, PM の3レコードを生成
  * ただし、対応するデータが存在しないセッションは除外
- *
- * NOTE: raw_jsonはストレージ効率のため最初のレコードのみに格納。
- * 他のレコードはraw_json: nullとなる。元データが必要な場合は
- * session='DAY'のレコードを参照すること。
  */
 export function toEquityBarDailyRecords(item: EquityBarDailyItem): EquityBarDailyRecord[] {
   const records: EquityBarDailyRecord[] = [];
-  let isFirstRecord = true;
 
   // 終日データがあれば追加（null/undefinedを除外）
   if (item.O != null || item.C != null) {
-    const record = toEquityBarDailyRecord(item, 'DAY');
-    // raw_jsonは最初のレコードのみに格納
-    if (!isFirstRecord) {
-      record.raw_json = null;
-    }
-    records.push(record);
-    isFirstRecord = false;
+    records.push(toEquityBarDailyRecord(item, 'DAY'));
   }
 
   // 前場データがあれば追加（null/undefinedを除外）
   if (item.MO != null || item.MC != null) {
-    const record = toEquityBarDailyRecord(item, 'AM');
-    if (!isFirstRecord) {
-      record.raw_json = null;
-    }
-    records.push(record);
-    isFirstRecord = false;
+    records.push(toEquityBarDailyRecord(item, 'AM'));
   }
 
   // 後場データがあれば追加（null/undefinedを除外）
   if (item.AO != null || item.AC != null) {
-    const record = toEquityBarDailyRecord(item, 'PM');
-    if (!isFirstRecord) {
-      record.raw_json = null;
-    }
-    records.push(record);
-    isFirstRecord = false;
+    records.push(toEquityBarDailyRecord(item, 'PM'));
   }
 
   return records;
