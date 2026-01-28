@@ -27,11 +27,26 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       include: [
+        // utils
         'src/lib/utils/date.ts',
         'src/lib/utils/html.ts',
         'src/lib/utils/retry.ts',
+        'src/lib/utils/logger.ts',
+        'src/lib/utils/batch.ts',
+        // jquants
         'src/lib/jquants/rate-limiter.ts',
+        'src/lib/jquants/client.ts',
+        // supabase
         'src/lib/supabase/errors.ts',
+        // cron
+        'src/lib/cron/auth.ts',
+        'src/lib/cron/job-run.ts',
+        'src/lib/cron/job-lock.ts',
+        'src/lib/cron/heartbeat.ts',
+        'src/lib/cron/business-day.ts',
+        // notification
+        'src/lib/notification/email.ts',
+        'src/lib/notification/templates.ts',
       ],
       thresholds: {
         statements: 80,
