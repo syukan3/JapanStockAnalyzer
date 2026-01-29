@@ -463,15 +463,28 @@ export async function syncEquityMasterSCD(
     const effectiveDate = items[0].Date;
     logger.info('Effective date from API', { requestedDate: date, effectiveDate });
 
-    // 2. 現在有効な全レコードを取得
-    const { data: currentRecords, error: fetchError } = await supabase
-      .from(TABLE_NAME_SCD)
-      .select(SCD_BASIC_COLUMNS)
-      .eq('is_current', true);
+    // 2. 現在有効な全レコードを取得（デフォルト1000行制限を回避）
+    const currentRecords: EquityMasterRecord[] = [];
+    const PAGE_SIZE = 1000;
+    let offset = 0;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { data, error: fetchError } = await supabase
+        .from(TABLE_NAME_SCD)
+        .select(SCD_BASIC_COLUMNS)
+        .eq('is_current', true)
+        .range(offset, offset + PAGE_SIZE - 1);
 
-    if (fetchError) {
-      throw fetchError;
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (!data || data.length === 0) break;
+      currentRecords.push(...(data as EquityMasterRecord[]));
+      if (data.length < PAGE_SIZE) break;
+      offset += PAGE_SIZE;
     }
+    logger.info('Loaded current records', { count: currentRecords.length });
 
     // Map for quick lookup
     const currentMap = new Map<string, EquityMasterRecord>();
