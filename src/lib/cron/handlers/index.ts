@@ -14,6 +14,14 @@ export {
   type CronAResult,
 } from './cron-a';
 
+// Cron A Chunk: equity_bars 分割処理
+export {
+  handleCronAChunk,
+  CronAChunkRequestSchema,
+  type CronAChunkRequest,
+  type CronAChunkResult,
+} from './cron-a-chunk';
+
 // Cron B: 決算発表予定同期
 export {
   handleCronB,

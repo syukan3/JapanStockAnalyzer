@@ -258,6 +258,25 @@ export class JQuantsClient {
   }
 
   /**
+   * 株価四本値（日足）1ページ分取得
+   *
+   * @returns データ配列と次ページのpagination_key（なければundefined）
+   */
+  async getEquityBarsDailySinglePage(
+    params: { code?: string; date?: string; from?: string; to?: string },
+    paginationKey?: string
+  ): Promise<{ data: EquityBarDailyItem[]; paginationKey?: string }> {
+    const response = await this.request<EquityBarsDailyResponse>(
+      '/equities/bars/daily',
+      { params, paginationKey }
+    );
+    return {
+      data: response.data ?? [],
+      paginationKey: response.pagination_key,
+    };
+  }
+
+  /**
    * 株価四本値（日足）全件取得
    */
   async getEquityBarsDaily(

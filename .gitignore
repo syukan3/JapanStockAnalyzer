@@ -51,3 +51,6 @@ supabase/.temp/
 
 # Sentry
 .sentryclirc
+
+# direnv
+.envrc

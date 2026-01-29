@@ -252,6 +252,75 @@ export async function syncEquityBarsDaily(
   }
 }
 
+/** チャンク（1ページ）同期の結果 */
+export interface SyncEquityBarsDailySinglePageResult {
+  /** 取得件数 */
+  fetched: number;
+  /** 保存件数 */
+  inserted: number;
+  /** 次ページのpagination_key（なければ完了） */
+  paginationKey?: string;
+  /** エラー一覧 */
+  errors: Error[];
+}
+
+/**
+ * 株価四本値を1ページ分だけ取得してDBに保存
+ *
+ * Vercel Hobbyの10秒制限に対応するため、1回のAPI呼び出しで1ページのみ処理する。
+ * GitHub Actionsからpagination_keyを渡してループ呼び出しすることで全ページを処理。
+ */
+export async function syncEquityBarsDailySinglePage(
+  params: FetchEquityBarsDailyParams,
+  options?: {
+    client?: JQuantsClient;
+    logContext?: LogContext;
+    expandSessions?: boolean;
+    /** 前回のpagination_key（初回はundefined） */
+    paginationKey?: string;
+  }
+): Promise<SyncEquityBarsDailySinglePageResult> {
+  if (!params.code && !params.date) {
+    throw new Error('syncEquityBarsDailySinglePage requires either code or date parameter');
+  }
+
+  const client = options?.client ?? createJQuantsClient({ logContext: options?.logContext });
+  const logger = createLogger({ dataset: 'equity_bar_daily', ...options?.logContext });
+  const supabase = getSupabaseAdmin();
+  const expandSessions = options?.expandSessions ?? false;
+
+  const timer = logger.startTimer('Sync equity bars daily (single page)');
+
+  try {
+    const { data: pageItems, paginationKey } = await client.getEquityBarsDailySinglePage(
+      params,
+      options?.paginationKey
+    );
+
+    const fetched = pageItems.length;
+
+    // DBレコード形式に変換
+    const records: EquityBarDailyRecord[] = expandSessions
+      ? pageItems.flatMap(toEquityBarDailyRecords)
+      : pageItems.map((item) => toEquityBarDailyRecord(item, 'DAY'));
+
+    // DBに保存
+    const result = await batchUpsert(supabase, TABLE_NAME, records, ON_CONFLICT);
+
+    timer.end({ fetched, inserted: result.inserted, hasNextPage: !!paginationKey });
+
+    return {
+      fetched,
+      inserted: result.inserted,
+      paginationKey,
+      errors: result.errors,
+    };
+  } catch (error) {
+    timer.endWithError(error as Error);
+    throw error;
+  }
+}
+
 /**
  * 指定日の全銘柄株価を同期
  *

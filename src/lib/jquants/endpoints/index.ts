@@ -57,6 +57,7 @@ export {
   syncEquityBarsDaily,
   syncEquityBarsDailyForDate,
   syncEquityBarsDailyForCode,
+  syncEquityBarsDailySinglePage,
   fetchEquityBarsDaily,
   fetchEquityBarsDailyPaginated,
   toEquityBarDailyRecord,
@@ -68,6 +69,7 @@ export {
   type SessionType,
   type FetchEquityBarsDailyParams,
   type SyncEquityBarsDailyResult,
+  type SyncEquityBarsDailySinglePageResult,
 } from './equity-bars-daily';
 
 // TOPIX
