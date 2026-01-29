@@ -11,7 +11,7 @@
 
 import { createAdminClient } from '../../src/lib/supabase/admin';
 import { createLogger, type LogContext } from '../../src/lib/utils/logger';
-import { syncEquityBarsDailyForDate, syncEquityMasterForDate } from '../../src/lib/jquants/endpoints';
+import { syncEquityBarsDailyForDate, syncEquityMasterSCD } from '../../src/lib/jquants/endpoints';
 import { getJSTDate } from '../../src/lib/utils/date';
 import { getPreviousBusinessDay } from '../../src/lib/cron/business-day';
 
@@ -26,7 +26,7 @@ function getSyncFn(dataset: Dataset): (date: string, options: { logContext: LogC
     case 'equity_bars':
       return syncEquityBarsDailyForDate;
     case 'equity_master':
-      return (date, options) => syncEquityMasterForDate(date, options);
+      return (date, options) => syncEquityMasterSCD(date, options);
   }
 }
 
