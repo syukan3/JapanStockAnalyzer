@@ -18,7 +18,8 @@
     "seed:financial": "tsx scripts/seed/financial.ts",
     "seed:earnings": "tsx scripts/seed/earnings.ts",
     "seed:investors": "tsx scripts/seed/investor-types.ts",
-    "seed:all": "tsx scripts/seed/index.ts"
+    "seed:all": "tsx scripts/seed/index.ts",
+    "cron:equity-bars": "tsx scripts/cron/equity-bars-direct.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.36.0",

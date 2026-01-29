@@ -16,6 +16,18 @@ jobs:
     environment: production
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Trigger Cron A - Calendar
         run: |
           curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
@@ -24,68 +36,12 @@ jobs:
             -d '{"dataset": "calendar"}' \
             --fail --silent --show-error --max-time 120
 
-      - name: Trigger Cron A - Equity Bars
-        id: equity_bars
-        continue-on-error: true
-        run: |
-          curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            -d '{"dataset": "equity_bars"}' \
-            --fail --silent --show-error --max-time 300
-
-      - name: Fallback - Equity Bars Chunk Processing
-        if: steps.equity_bars.outcome == 'failure'
-        run: |
-          echo "Bulk equity_bars failed, falling back to chunk processing..."
-          PAGINATION_KEY=""
-          TARGET_DATE=""
-          PAGE=0
-          MAX_PAGES=100
-          while true; do
-            PAGE=$((PAGE + 1))
-            if [ "$PAGE" -gt "$MAX_PAGES" ]; then
-              echo "Max pages ($MAX_PAGES) exceeded, aborting"
-              exit 1
-            fi
-            echo "Processing chunk page ${PAGE}..."
-
-            # 初回はbody空（targetDate自動決定）、2回目以降はdateとpagination_keyを渡す
-            if [ -z "$PAGINATION_KEY" ]; then
-              BODY='{}'
-            else
-              BODY="{\"pagination_key\": \"${PAGINATION_KEY}\", \"date\": \"${TARGET_DATE}\"}"
-            fi
-
-            RESPONSE=$(curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a/chunk" \
-              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-              -H "Content-Type: application/json" \
-              -d "$BODY" \
-              --fail --silent --show-error --max-time 120)
-
-            echo "Response: $RESPONSE"
-
-            DONE=$(echo "$RESPONSE" | jq -r '.done')
-            SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
-
-            if [ "$SUCCESS" != "true" ]; then
-              echo "Chunk processing failed!"
-              exit 1
-            fi
-
-            # 初回レスポンスからtargetDateを取得し、以降の呼び出しで固定する
-            if [ -z "$TARGET_DATE" ]; then
-              TARGET_DATE=$(echo "$RESPONSE" | jq -r '.targetDate // empty')
-              echo "Target date: ${TARGET_DATE}"
-            fi
-
-            if [ "$DONE" = "true" ]; then
-              echo "All chunks processed successfully (${PAGE} pages)"
-              break
-            fi
-
-            PAGINATION_KEY=$(echo "$RESPONSE" | jq -r '.pagination_key')
-          done
+      - name: Sync Equity Bars (direct)
+        env:
+          JQUANTS_API_KEY: ${{ secrets.JQUANTS_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npx tsx scripts/cron/equity-bars-direct.ts
 
       - name: Trigger Cron A - TOPIX
         run: |
