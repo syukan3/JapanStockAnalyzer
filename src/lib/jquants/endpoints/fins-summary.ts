@@ -75,7 +75,7 @@ export function generateDisclosureId(item: FinancialSummaryItem): string {
  * APIレスポンスをDBレコード形式に変換
  */
 export function toFinancialDisclosureRecord(item: FinancialSummaryItem): FinancialDisclosureRecord {
-  return {
+  const record: FinancialDisclosureRecord = {
     disclosure_id: generateDisclosureId(item),
     disclosed_date: item.DiscDate,
     disclosed_time: item.DiscTime,
@@ -151,6 +151,15 @@ export function toFinancialDisclosureRecord(item: FinancialSummaryItem): Financi
     nc_equity_to_asset_ratio: item.NCEqAR,
     nc_bps: item.NCBPS,
   };
+
+  // J-Quants APIが空文字 "" を返す場合があり、numeric型カラムに挿入できないため null に変換
+  for (const key of Object.keys(record) as (keyof FinancialDisclosureRecord)[]) {
+    if ((record as Record<string, unknown>)[key] === '') {
+      (record as Record<string, unknown>)[key] = null;
+    }
+  }
+
+  return record;
 }
 
 /**
