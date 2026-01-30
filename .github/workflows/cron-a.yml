@@ -33,6 +33,7 @@ jobs:
         run: npm ci
 
       - name: Trigger Cron A - Calendar
+        id: calendar
         run: |
           curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
@@ -41,6 +42,7 @@ jobs:
             --fail --silent --show-error --max-time 120
 
       - name: Sync Equity Bars (direct)
+        if: always() && steps.calendar.outcome == 'success'
         env:
           JQUANTS_API_KEY: ${{ secrets.JQUANTS_API_KEY }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -48,6 +50,7 @@ jobs:
         run: npx tsx scripts/cron/cron-a-direct.ts equity_bars
 
       - name: Trigger Cron A - TOPIX
+        if: always() && steps.calendar.outcome == 'success'
         run: |
           curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
@@ -56,6 +59,7 @@ jobs:
             --fail --silent --show-error --max-time 120
 
       - name: Trigger Cron A - Financial
+        if: always() && steps.calendar.outcome == 'success'
         run: |
           curl -X POST "${{ secrets.VERCEL_URL }}/api/cron/jquants/a" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
@@ -64,6 +68,7 @@ jobs:
             --fail --silent --show-error --max-time 300
 
       - name: Sync Equity Master (direct)
+        if: always() && steps.calendar.outcome == 'success'
         env:
           JQUANTS_API_KEY: ${{ secrets.JQUANTS_API_KEY }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}

@@ -545,6 +545,15 @@ export async function syncEquityMasterSCD(
       });
     }
 
+    // 5a でエラーがあれば、5b をスキップして即座にエラーを投げる
+    // （is_current=true の重複を防ぐ）
+    if (errors.length > 0) {
+      const msg = `Failed to close ${errors.length} record(s) — aborting insert to prevent duplicate is_current=true`;
+      const err = new Error(msg);
+      timer.endWithError(err);
+      throw err;
+    }
+
     // 5b. 新レコードを追加
     let inserted = 0;
     if (toInsert.length > 0) {

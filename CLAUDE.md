@@ -9,6 +9,8 @@
 ### Database
 - [Supabase Postgres Best Practices](.claude/skills/postgres-best-practices/SKILL.md)
   - SQLクエリ作成、スキーマ設計、インデックス最適化、RLS設定
+- [Supabase Data Check](.claude/skills/supabase-data-check/SKILL.md)
+  - データ存在確認、最新データ日チェック、Cron A結果確認
 
 ### Frontend
 - [Vercel React Best Practices](.claude/skills/react-best-practices/SKILL.md)
