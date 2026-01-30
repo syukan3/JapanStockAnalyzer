@@ -12,6 +12,10 @@
 - [Supabase Data Check](.claude/skills/supabase-data-check/SKILL.md)
   - データ存在確認、最新データ日チェック、Cron A結果確認
 
+### Ops
+- [Cron Troubleshoot](.claude/skills/cron-troubleshoot/SKILL.md)
+  - Cron障害調査、エラーログ解析、データ欠損特定、バックフィル
+
 ### Frontend
 - [Vercel React Best Practices](.claude/skills/react-best-practices/SKILL.md)
   - React/Next.js パフォーマンス最適化、57ルール（8カテゴリ）
