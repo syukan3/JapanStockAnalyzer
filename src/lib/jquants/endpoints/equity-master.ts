@@ -77,8 +77,8 @@ export function toEquityMasterSCDRecord(item: EquityMasterItem): EquityMasterRec
     scale_category: item.ScaleCat,
     market_code: item.Mkt,
     market_name: item.MktNm,
-    margin_code: item.MarginCode,
-    margin_code_name: item.MarginCodeNm,
+    margin_code: item.MarginCode ?? null,
+    margin_code_name: item.MarginCodeNm ?? null,
     valid_from: item.Date,
     valid_to: null,
     is_current: true,
@@ -108,7 +108,10 @@ export function isSameEquityMaster(
   b: EquityMasterRecord | EquityMasterSnapshotRecord
 ): boolean {
   for (const field of COMPARE_FIELDS) {
-    if (a[field] !== b[field]) {
+    // null と undefined を同等として扱う（DB は null、API は undefined を返す場合がある）
+    const va = a[field] ?? null;
+    const vb = b[field] ?? null;
+    if (va !== vb) {
       return false;
     }
   }
@@ -510,16 +513,6 @@ export async function syncEquityMasterSCD(
         // valid_toはexclusive（newRecord.valid_fromと同じ日付を設定）
         toClose.push({ id: existing.id!, valid_to: newRecord.valid_from });
         toInsert.push(newRecord);
-        // DEBUG: 最初の3件だけ差分フィールドをログ出力
-        if (toClose.length <= 3) {
-          const diffs: Record<string, { db: unknown; api: unknown }> = {};
-          for (const field of COMPARE_FIELDS) {
-            if (existing[field] !== newRecord[field]) {
-              diffs[field] = { db: existing[field], api: newRecord[field] };
-            }
-          }
-          logger.info('DEBUG: field diff', { code: item.Code, diffs });
-        }
       }
       // 変更なし → 何もしない
     }
@@ -558,9 +551,9 @@ export async function syncEquityMasterSCD(
     // 5a でエラーがあれば、5b をスキップして即座にエラーを投げる
     // （is_current=true の重複を防ぐ）
     if (errors.length > 0) {
-      // DEBUG: 最初の3件の個別エラーをログ出力
+      // 最初の3件の個別エラーをログ出力
       for (const e of errors.slice(0, 3)) {
-        logger.error('DEBUG: close error detail', { message: e.message });
+        logger.error('Close error detail', { message: e.message });
       }
       const msg = `Failed to close ${errors.length} record(s) — aborting insert to prevent duplicate is_current=true`;
       const err = new Error(msg);
