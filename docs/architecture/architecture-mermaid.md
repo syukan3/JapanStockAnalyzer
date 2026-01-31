@@ -1,4 +1,4 @@
-# JapanStockAnalyzer アーキテクチャ図
+# JapanStockDataPipeline アーキテクチャ図
 
 ## 1. 全体構成図
 
@@ -211,7 +211,7 @@ erDiagram
 
 ```mermaid
 graph LR
-    subgraph Root["JapanStockAnalyzer/"]
+    subgraph Root["JapanStockDataPipeline/"]
         subgraph GH[".github/workflows/"]
             cronA["cron-a.yml"]
             cronB["cron-b.yml"]
@@ -251,7 +251,7 @@ graph LR
 
 ```mermaid
 mindmap
-    root((JapanStockAnalyzer))
+    root((JapanStockDataPipeline))
         Frontend
             Next.js 16
             React 19

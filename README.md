@@ -1,4 +1,4 @@
-# JapanStockAnalyzer
+# JapanStockDataPipeline
 
 J-Quants API V2 から日本株データを取得し、Supabase に自動同期するデータ基盤プロジェクト。
 

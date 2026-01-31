@@ -41,7 +41,7 @@ function getAlertEmailTo(): string | null {
  * 送信元メールアドレスを取得
  */
 function getEmailFrom(): string {
-  return process.env.EMAIL_FROM ?? 'JapanStockAnalyzer <noreply@resend.dev>';
+  return process.env.EMAIL_FROM ?? 'JapanStockDataPipeline <noreply@resend.dev>';
 }
 
 export interface JobFailureNotification {

@@ -19,7 +19,7 @@
 ## ディレクトリ構成
 
 ```
-JapanStockAnalyzer/
+JapanStockDataPipeline/
 ├── .github/
 │   └── workflows/
 │       ├── cron-a.yml              # 日次確定データ（JST 18:40）
@@ -1254,7 +1254,7 @@ export interface JobFailureNotification {
 export async function sendJobFailureEmail(data: JobFailureNotification): Promise<void> {
   try {
     await resend.emails.send({
-      from: 'JapanStockAnalyzer <noreply@yourdomain.com>',
+      from: 'JapanStockDataPipeline <noreply@yourdomain.com>',
       to: process.env.ALERT_EMAIL_TO!,
       subject: `[ALERT] ${data.jobName} 失敗 - ${data.targetDate}`,
       html: `

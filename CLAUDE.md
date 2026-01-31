@@ -1,6 +1,6 @@
-# JapanStockAnalyzer
+# JapanStockDataPipeline
 
-日本株分析プロジェクト
+日本株データパイプライン
 
 ## Skills
 

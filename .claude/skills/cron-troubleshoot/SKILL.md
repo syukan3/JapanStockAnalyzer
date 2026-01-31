@@ -49,7 +49,7 @@ gh run view {RUN_ID} --log-failed 2>&1 | grep -E "error|FAILED|Error|duplicate|c
 欠損日を特定するには、営業日を取得して各テーブルのデータ件数を照合する：
 
 ```bash
-source /Users/m-sakae/Source/JapanStockAnalyzer/.env.local
+source /Users/m-sakae/Source/JapanStockDataPipeline/.env.local
 
 # 直近の営業日を取得（{FROM} {TO} を置換）
 curl -s "${NEXT_PUBLIC_SUPABASE_URL}/rest/v1/trading_calendar?calendar_date=gte.{FROM}&calendar_date=lte.{TO}&is_business_day=eq.true&select=calendar_date&order=calendar_date.desc" \

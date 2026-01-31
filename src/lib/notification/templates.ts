@@ -118,7 +118,7 @@ ${errorMessage}
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
 
   <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-    このメールは JapanStockAnalyzer のジョブ監視システムから自動送信されています。
+    このメールは JapanStockDataPipeline のジョブ監視システムから自動送信されています。
   </p>
 </body>
 </html>
@@ -215,7 +215,7 @@ export function getJobSuccessEmailTemplate(
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
 
   <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-    このメールは JapanStockAnalyzer のジョブ監視システムから自動送信されています。
+    このメールは JapanStockDataPipeline のジョブ監視システムから自動送信されています。
   </p>
 </body>
 </html>
@@ -299,7 +299,7 @@ export function getDailySummaryEmailTemplate(
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
 
   <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-    JapanStockAnalyzer 日次レポート
+    JapanStockDataPipeline 日次レポート
   </p>
 </body>
 </html>
